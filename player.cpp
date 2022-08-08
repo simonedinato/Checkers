@@ -46,7 +46,6 @@ Player::Player(const Player& copy){
     this->pimpl = new Impl{newboard(), nullptr, copy.pimpl->player_nr, copy.pimpl->board_count};
     Impl* temp = this->pimpl;
     Impl* copytemp = copy.pimpl;
-
     /*
     while(copytemp != nullptr){
         temp->player_nr = copytemp->player_nr;;
@@ -72,7 +71,6 @@ Player::Player(const Player& copy){
                 temp->board[i][j] = copytemp->board[i][j];
             }
         }
-        std::cout<< "STOP"<<std::endl;
         temp = temp->next;
         if(copytemp->next != nullptr){
             temp = new Impl{nullptr};
@@ -80,6 +78,40 @@ Player::Player(const Player& copy){
         copytemp = copytemp->next;
     }
     std::cout<< "copy over"<<std::endl;
+}
+
+Player& Player::operator=(const Player& copy){
+    std::cout<< "assignment called"<<std::endl;
+    if(this->pimpl == copy.pimpl) return *this;
+    else{
+        Impl* temp = this->pimpl;
+        this->pimpl = this->pimpl->next;
+        for(int i = 0; i < SIZE; i++){
+            delete[] temp->board[i];
+        }
+        delete[] temp->board;
+        temp = new Impl{newboard(), nullptr, copy.pimpl->player_nr, copy.pimpl->board_count};
+        Impl* copytemp = copy.pimpl;
+        while(copytemp != nullptr){
+            temp = new Impl{newboard(), nullptr, copytemp->player_nr, copytemp->board_count};
+            for(int i = 0; i < SIZE; i++){
+                for(int j = 0; j < SIZE; j++){
+                    temp->board[i][j] = copytemp->board[i][j];
+                }
+            }
+            temp = temp->next;
+            if(copytemp->next != nullptr){
+                temp = new Impl{nullptr};
+            }
+            copytemp = copytemp->next;
+            std::cout<<"assignment over"<<std::endl;
+            return *this;
+        }
+    }
+}
+
+Player::piece Player::operator()(int r, int c, int history_offset) const{
+    
 }
 
 int main(){

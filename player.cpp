@@ -111,7 +111,20 @@ Player& Player::operator=(const Player& copy){
 }
 
 Player::piece Player::operator()(int r, int c, int history_offset) const{
-    
+    std::cout<< "operator() called"<<std::endl;
+    int count = 0;
+    Impl* temp = this->pimpl;
+    while(temp != nullptr){
+        temp = temp->next;
+        count++;
+    }
+    temp = this->pimpl;
+    while(count > history_offset){
+        temp = temp->next;
+        count--;
+    }
+    std::cout<< "operator() over"<<std::endl;
+    return temp->board[r][c];
 }
 
 int main(){

@@ -16,6 +16,13 @@ Player::piece** newboard(){
     return board;
 }
 
+void clearboard(Player::piece** board){
+    for(int y = 0; y < SIZE; y++){
+        delete[] board[y];
+    }
+    delete[] board;
+}
+
 Player::Player(int player_nr){
     std::cout<< "constructor called"<<std::endl;
     if(player_nr != 1 && player_nr != 0){
@@ -127,10 +134,57 @@ Player::piece Player::operator()(int r, int c, int history_offset) const{
     return temp->board[r][c];
 }
 
+void Player::load_board(const std::string& filename){
+    std::cout<<"Load"<<std::endl;
+    Impl* temp;
+    int tail;
+    if(this->pimpl->board == nullptr){
+        this->pimpl->board = newboard();
+        temp = this->pimpl;
+        tail = this->pimpl->board_count;
+    }
+    else{
+        temp = this->pimpl;
+        while(temp->next != nullptr){
+            temp = temp->next;
+        }
+        tail = temp->board_count;
+        temp->next = new Impl{newboard(), nullptr, this->pimpl->player_nr, tail+1};
+        temp = temp->next;
+    }
+    std::fstream file(filename, std::fstream::in);
+    Player::piece** board = newboard();
+    char cell;
+    int i = SIZE - 1, j = 0, xcount = 0, ocount = 0;
+    
+    while(file.get(cell)){
+        if(cell != '\n'){
+            if(i < 0){
+                clearboard(board);
+                throw player_exception{player_exception::index_out_of_bounds, "file is not a valid board"};
+            }
+            if((i+j) / 2 == 0 && cell != ' '){
+                clearboard(board);
+                throw player_exception{player_exception::index_out_of_bounds, "file is not a valid board"};
+            }
+            if(cell == 'o' || cell == 'O') ocount++;
+            if(cell == 'x' || cell == 'X') xcount++;
+            board[i][j] = piece(cell);
+            j++;
+            if(j == SIZE){
+                i--;
+                j = 0;
+            }
+        }
+        file.get(cell);
+    }
+    file.close();
+}
+
 int main(){
     Player p1(0);
     Player p2(p1);
-    
+    p1.load_board("board.txt");
     return 0;
 }
 

@@ -1,6 +1,20 @@
 #include "player.hpp"
 #define SIZE 8
 
+Player::piece convert_char(char i){
+    switch(i){
+        case 'x':
+            return Player::x;
+        case 'o':
+            return Player::o;
+        case 'X':
+            return Player::X;
+        case 'O':
+            return Player::O;
+        default:
+            return Player::e;
+    }
+}
 
 struct Player::Impl{
     Player::piece** board;
@@ -152,6 +166,11 @@ void Player::load_board(const std::string& filename){
         temp->next = new Impl{newboard(), nullptr, this->pimpl->player_nr, tail+1};
         temp = temp->next;
     }
+    std::ifstream f(filename.c_str());
+    bool test = false;
+    test = f.good();
+	
+    if(!test) throw player_exception{player_exception::index_out_of_bounds, "file not found"};
     std::fstream file(filename, std::fstream::in);
     Player::piece** board = newboard();
     char cell;
@@ -169,7 +188,7 @@ void Player::load_board(const std::string& filename){
             }
             if(cell == 'o' || cell == 'O') ocount++;
             if(cell == 'x' || cell == 'X') xcount++;
-            board[i][j] = piece(cell);
+            board[i][j] = convert_char(cell);
             j++;
             if(j == SIZE){
                 i--;
@@ -179,6 +198,12 @@ void Player::load_board(const std::string& filename){
         file.get(cell);
     }
     file.close();
+    for(int i = 0; i < SIZE; i++){
+        for(int j = 0; j < SIZE; j++){
+            std::cout<<board[i][j]<<" ";
+        }
+        std::cout<<std::endl;   
+    }
 }
 
 int main(){

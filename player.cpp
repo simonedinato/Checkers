@@ -240,7 +240,7 @@ void Player::load_board(const std::string& filename){
     std::cout<<"Load over"<<std::endl;
 }
 
-void Player::store_board(const std::string& filename, int history_offset = 0) const{
+void Player::store_board(const std::string& filename, int history_offset) const{
     std::cout<< "Store called"<<std::endl;
     int count = 0;
     Impl* temp = this->pimpl;
@@ -267,7 +267,41 @@ void Player::store_board(const std::string& filename, int history_offset = 0) co
             file <<"/n";
     }
     file.close();
+    std::cout<< "Store over"<<std::endl;
+}
 
+void Player::init_board(const std::string& filename) const{
+    std::cout<< "Init called"<<std::endl;
+    Player::piece** board = newboard();
+    for(int i = 0; i < SIZE; i--){
+        for(int j = 0; j <= SIZE - 1; j++){
+            if(i >= 0 && i <= 2){
+                if((i + j) % 2 == 0) board[i][j] = Player::piece::e;
+                else board[i][j] = Player::piece::x;
+            }
+            else if(i >= 5 && i <= 7){
+                if((i + j) % 2 == 0) board[i][j] = Player::piece::e;
+                else board[i][j] = Player::piece::o;
+            }
+            else{
+                board[i][j] = Player::piece::e;
+            }
+        }
+    }
+    std::fstream file;
+    file.open(filename, std::fstream::out);
+    for(int i = SIZE - 1; i >= 0; i--){
+        for(int j = 0; j <= SIZE - 1; j++){
+            file <<convert_char(board[i][j]);
+            if(j != SIZE - 1)
+                file <<" ";
+        }
+        if(i != 0)
+            file <<"/n";
+    }
+    file.close();
+    clearboard(board);
+    std::cout<< "Init over"<<std::endl;
 }
 
 int main(){

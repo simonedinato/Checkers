@@ -1,6 +1,41 @@
 #include "player.hpp"
 #define SIZE 8
+#define SIZEX 12
+#define SIZEO 12
 
+char convert_char(Player::piece i){
+    switch(i){
+        case Player::piece::x:
+            return 'x';
+        case Player::piece::o:
+            return 'o';
+        case Player::piece::X:
+            return 'X';
+        case Player::piece::O:
+            return 'O';
+        case Player::piece::e:
+            return ' '; 
+        default:
+            break;
+    }
+}
+
+Player::piece convert_piece(char i){
+    switch(i){
+        case 'x':
+            return Player::piece::x;
+        case 'o':
+            return Player::piece::o;
+        case 'X':
+            return Player::piece::X;
+        case 'O':
+            return Player::piece::O;
+        case 'e':
+            return Player::piece::e;
+        default:
+            break;
+    }
+}
 
 struct Player::Impl{
     Player::piece** board;
@@ -72,7 +107,7 @@ Player::Player(const Player& copy){
         copytemp = copytemp->next;
     }*/
     while(copytemp != nullptr){
-        temp = new Impl{newboard(), nullptr, copytemp->player_nr, copytemp->board_count};
+        //temp = new Impl{newboard(), nullptr, copytemp->player_nr, copytemp->board_count};
         for(int i = 0; i < SIZE; i++){
             for(int j = 0; j < SIZE; j++){
                 temp->board[i][j] = copytemp->board[i][j];
@@ -112,8 +147,8 @@ Player& Player::operator=(const Player& copy){
             }
             copytemp = copytemp->next;
             std::cout<<"assignment over"<<std::endl;
-            return *this;
         }
+        return *this;
     }
 }
 
@@ -125,6 +160,8 @@ Player::piece Player::operator()(int r, int c, int history_offset) const{
         temp = temp->next;
         count++;
     }
+    if(count > history_offset)
+        throw player_exception{player_exception::index_out_of_bounds,"board not found"};
     temp = this->pimpl;
     while(count > history_offset){
         temp = temp->next;
@@ -135,7 +172,7 @@ Player::piece Player::operator()(int r, int c, int history_offset) const{
 }
 
 void Player::load_board(const std::string& filename){
-    std::cout<<"Load"<<std::endl;
+    std::cout<<"Load called"<<std::endl;
     Impl* temp;
     int tail;
     if(this->pimpl->board == nullptr){
@@ -152,6 +189,11 @@ void Player::load_board(const std::string& filename){
         temp->next = new Impl{newboard(), nullptr, this->pimpl->player_nr, tail+1};
         temp = temp->next;
     }
+    std::ifstream f(filename.c_str());
+    bool test = false;
+    test = f.good();
+	
+    if(!test) throw player_exception{player_exception::index_out_of_bounds, "file not found"};
     std::fstream file(filename, std::fstream::in);
     Player::piece** board = newboard();
     char cell;
@@ -161,15 +203,16 @@ void Player::load_board(const std::string& filename){
         if(cell != '\n'){
             if(i < 0){
                 clearboard(board);
-                throw player_exception{player_exception::index_out_of_bounds, "file is not a valid board"};
+                throw player_exception{player_exception::index_out_of_bounds, "too much pieces"};
             }
-            if((i+j) / 2 == 0 && cell != ' '){
+            if((i+j) % 2 == 0 && cell != ' '){
                 clearboard(board);
-                throw player_exception{player_exception::index_out_of_bounds, "file is not a valid board"};
+                std::cout<<"Block"<<std::endl;
+                throw player_exception{player_exception::index_out_of_bounds, "piece in a white space"};
             }
             if(cell == 'o' || cell == 'O') ocount++;
             if(cell == 'x' || cell == 'X') xcount++;
-            board[i][j] = piece(cell);
+            board[i][j] = convert_piece(cell);
             j++;
             if(j == SIZE){
                 i--;
@@ -179,12 +222,64 @@ void Player::load_board(const std::string& filename){
         file.get(cell);
     }
     file.close();
+    for(int i = 0; i < SIZE; i++){
+        for(int j = 0; j < SIZE; j++){
+            std::cout<<convert_char(board[i][j])<<" ";
+        }
+        std::cout<<std::endl;   
+    }
+    if(xcount > SIZEX){
+		clearboard(board);
+		throw player_exception{player_exception::invalid_board, "too many x pieces"};
+	}
+	if(ocount > SIZEO){
+		clearboard(board);
+		throw player_exception{player_exception::invalid_board, "too many o pieces"};
+	}
+    clearboard(board);
+    std::cout<<"Load over"<<std::endl;
+}
+
+void Player::store_board(const std::string& filename, int history_offset = 0) const{
+    std::cout<< "Store called"<<std::endl;
+    int count = 0;
+    Impl* temp = this->pimpl;
+    while(temp != nullptr){
+        temp = temp->next;
+        count++;
+    }
+    if(count > history_offset)
+        throw player_exception{player_exception::index_out_of_bounds,"board not found"};
+    temp = this->pimpl;
+    while(count > history_offset){
+        temp = temp->next;
+        count--;
+    }
+    std::fstream file;
+    file.open(filename, std::fstream::out);
+    for(int i = SIZE - 1; i >= 0; i--){
+        for(int j = 0; j <= SIZE - 1; j++){
+            file <<convert_char(temp->board[i][j]);
+            if(j != SIZE - 1)
+                file <<" ";
+        }
+        if(i != 0)
+            file <<"/n";
+    }
+    file.close();
+
 }
 
 int main(){
-    Player p1(0);
-    Player p2(p1);
-    p1.load_board("board.txt");
+    try{
+        Player p1(0);
+        Player p2(p1);
+        p1.load_board("board.txt");
+    }
+    catch(player_exception& e){
+        std::cout<<e.msg<<std::endl;
+    }
+    
     return 0;
 }
 

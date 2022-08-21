@@ -37,6 +37,151 @@ Player::piece convert_piece(char i){
     }
 }
 
+struct Step{
+    int begin[2];
+    int take[2];
+    int end[2];
+    Player::piece move;
+    Step(){
+        for(int i = 0; i < 2; i++){
+            begin[i] = 0;
+            take[i] = 0;
+            end[i] = 0;
+        }
+        move = Player::piece::e;
+    }
+    void step_pawn(int x, int y, int next_x, int next_y, int take_x, int take_y, Player::piece p){
+        begin[0] = x, begin[1] = y;
+        take[0] = take_x, take[1] = take_y;
+        end[0] = next_x, end[1] = next_y;
+    }
+};
+Player::piece dame_p(Player::piece i) {
+    return (i == Player::piece::x) ?  Player::piece::X :  Player::piece::O;
+}
+
+Player::piece enemy(Player::piece i) {
+    return (i == Player::piece::x) ?  Player::piece::o :  Player::piece::x;
+}
+
+
+bool check_take(Player::piece** board, int x, int y, Player::piece enemy){
+    if(board[x][y] == enemy) return true;
+    return false;
+}
+
+void check(int x, int y, int& next_x, int& next_y, int way,int& count,  Player::piece e_pawn, Player::piece pawn, Player::piece** board, Step*& moves){
+    int i = next_x - x;
+    int j = next_y - y;
+    //check board limits
+    if((x >= 0) && (x < SIZE) && (y >= 0) && (y < SIZE)){
+        //check spaces
+        if(board[x][y] == Player::piece::e){
+            //make move
+            moves[count].step_pawn(x, y, next_x, next_y, 0, 0, pawn);
+            count++;
+        }
+        //try to eat
+        else if(board[next_x][next_y] == e_pawn){
+            //check new board limits
+            if((next_x + (way * i) >= 0) && (next_x + (way * i) < SIZE) && (next_y + (way * j)>= 0) && (next_y + (way * j) < SIZE)){
+                //check new spaces
+                if(board[next_x + (way * i)][next_y + (way * j)] == Player::piece::e){
+                    //make move
+                    moves[count].step_pawn(x, y, (next_x + (way * i)), (next_y + (way * j)), next_x, next_y, pawn);
+                    count++;
+                }
+            }
+        }
+    }
+}
+
+void check_dame(int x, int y, int& next_x, int& next_y, int way,int& count, Player::piece dame,  Player::piece e_pawn, Player::piece e_dame, Player::piece** board, Step*& moves){
+    int i = next_x - x;
+    int j = next_y - y;
+    //check board limits
+    if((x >= 0) && (x < SIZE) && (y >= 0) && (y < SIZE)){
+        //check spaces
+        if(board[x][y] == Player::piece::e){
+            //make move
+            moves[count].step_pawn(x, y, next_x, next_y, 0, 0, dame);
+            count++;
+        }
+        //try to eat
+        else if(board[next_x][next_y] == e_pawn || board[next_x][next_y] == e_dame){
+            //check new board limits
+            if((next_x + (way * i) >= 0) && (next_x + (way * i) < SIZE) && (next_y + (way * j)>= 0) && (next_y + (way * j) < SIZE)){
+                //check new spaces
+                if(board[next_x + (way * i)][next_y + (way * j)] == Player::piece::e){
+                    //make move
+                    moves[count].step_pawn(x, y, (next_x + (way * i)), (next_y + (way * j)), next_x, next_y, dame);
+                    count++;
+                }
+            }
+        }
+    }
+}
+
+Step* moves(int way, Player::piece pawn, Player::piece** const board){
+    int x, y, next_x, next_y, count;
+    x = y = next_x = next_y = count = 0;
+    Step* moves = new Step[40];
+    Player::piece dame = dame_p(pawn), e_pawn = enemy(pawn), e_dame = dame_p(enemy(pawn));
+
+    for(int i = 0; i < SIZE; i++){
+        for(int j = 0; j < 8; j++){
+            x = i, y = j;
+            if(pawn == board[x][y]){
+                //try left
+                next_x = x + way;
+                next_y = y - way;
+                /*if(check_space(next_x, next_y)){
+                    if(check_empty(board,  next_x, next_y)){
+                        moves[count].step_pawn(x, y, next_x, next_y, 0, 0, p);
+                        count++;
+                    }
+                    else if(board[x][y] == e_pawn){
+                        if(check_space(next_x + way, next_y - way)){
+                            pawn = board[next_x + way][next_y - way];
+                            if(check_empty(board, next_x + way, next_y - way)){
+                                moves[count].step_pawn(x, y, (next_x + way), (next_y - way), next_x, next_y, p);
+                                count++;
+                            }
+                        }
+                    }
+                }*/
+                check(x, y, next_x, next_y, way, count, e_pawn, pawn, board, moves);
+                //try right
+                next_x = x + way;
+                next_y = y + way;
+                check(x, y, next_x, next_y, way, count, e_pawn, pawn, board, moves);
+            }
+            else if(board[x][y] == dame){
+                //try top left
+                next_x = x + way;
+                next_y = y - way;
+                check_dame(x, y, next_x, next_y, way, count, dame, e_pawn, e_dame, board, moves);
+                //try top right
+                next_x = x + way;
+                next_y = y + way;
+                check_dame(x, y, next_x, next_y, way, count, dame, e_pawn, e_dame, board, moves);
+                //try bottom left
+                next_x = x - way;
+                next_y = y - way;
+                check_dame(x, y, next_x, next_y, way, count, dame, e_pawn, e_dame, board, moves);
+                //try bottom right
+                next_x = x + way;
+                next_y = y - way;
+                check_dame(x, y, next_x, next_y, way, count, dame, e_pawn, e_dame, board, moves);
+
+            }
+        }
+    }
+    return moves;
+
+
+}
+
 struct Player::Impl{
     Player::piece** board;
     Impl* next;
@@ -302,6 +447,10 @@ void Player::init_board(const std::string& filename) const{
     file.close();
     clearboard(board);
     std::cout<< "Init over"<<std::endl;
+}
+
+void Player::move(){
+    
 }
 
 int main(){

@@ -64,12 +64,6 @@ Player::piece enemy(Player::piece i) {
     return (i == Player::piece::x) ?  Player::piece::o :  Player::piece::x;
 }
 
-
-bool check_take(Player::piece** board, int x, int y, Player::piece enemy){
-    if(board[x][y] == enemy) return true;
-    return false;
-}
-
 void check(int x, int y, int& next_x, int& next_y, int way,int& count,  Player::piece e_pawn, Player::piece pawn, Player::piece** board, Step*& moves){
     int i = next_x - x;
     int j = next_y - y;

@@ -179,6 +179,16 @@ Step rand_moves(Player::piece pawn, Player::piece** board){
     return move;
 }
 
+bool are_equal(Player::piece** board1, Player::piece** board2){
+    bool equal = false;
+    for(int i = 0; ((i < SIZE) && (!equal)); i++) {
+		for(int j = 0; ((j < SIZE) && (!equal)); j++) {
+			if(board1[i][j] == board2[i][j]) equal = true;
+		}
+	}
+    return equal;
+}
+
 struct Player::Impl{
     Player::piece** board;
     Impl* next;
@@ -493,9 +503,52 @@ void Player::move(){
 
     temp->next = new Impl{newboard(), nullptr, count+1, temp->player_nr};
     temp = temp->next;
-    copy_board(temp->board, result);
+    temp->board = copy_board(temp->board, result);
     delete[] board;
 }
+
+bool Player::valid_move() const {
+    Step* x_move;
+	Step* o_move;
+    bool check = false;
+    Impl* temp1 = this->pimpl;
+
+    while(temp1->next->next){
+        temp1 = temp1->next;
+    }
+
+    Impl* temp2 = temp1;
+    temp2 = temp2->next;
+	if(are_equal(temp1->board, temp2->board)){
+        return check;
+    }
+    else{
+        Player::piece** start =newboard();
+	    Player::piece** end = newboard();
+	    Player::piece** copy = newboard();
+        start = copy_board(start, temp1->board);
+        end = copy_board(end, temp2->board);
+        //dubbio 2
+        x_move = moves(1, Player::piece::x, start);
+        for(int i = 0; ((i < 40) && (x_move[i].move != Player::piece::e) && (!check)); i++){
+            copy = copy_board(copy, start);
+            if(are_equal(end, insert_board(x_move[i], copy))) check = true;
+        }
+        o_move = moves(-1, Player::piece::o, start);
+        for(int i = 0; ((i < 40) && (o_move[i].move != Player::piece::e) && (!check)); i++){
+            copy = copy_board(copy, start);
+            if(are_equal(end, insert_board(o_move[i], copy))) check = true;
+        }
+        delete[] x_move;
+        delete[] o_move;
+        clearboard(start);
+        clearboard(end);
+        clearboard(copy);
+        return check;
+    }
+}
+
+
 
 int main(){
     try{

@@ -129,21 +129,6 @@ Step* moves(int way, Player::piece pawn, Player::piece** const board){
                 //try left
                 next_x = x + way;
                 next_y = y - way;
-                /*if(check_space(next_x, next_y)){
-                    if(check_empty(board,  next_x, next_y)){
-                        moves[count].step_pawn(x, y, next_x, next_y, 0, 0, p);
-                        count++;
-                    }
-                    else if(board[x][y] == e_pawn){
-                        if(check_space(next_x + way, next_y - way)){
-                            pawn = board[next_x + way][next_y - way];
-                            if(check_empty(board, next_x + way, next_y - way)){
-                                moves[count].step_pawn(x, y, (next_x + way), (next_y - way), next_x, next_y, p);
-                                count++;
-                            }
-                        }
-                    }
-                }*/
                 check(x, y, next_x, next_y, way, count, e_pawn, pawn, board, moves);
                 //try right
                 next_x = x + way;
@@ -172,8 +157,26 @@ Step* moves(int way, Player::piece pawn, Player::piece** const board){
         }
     }
     return moves;
+}
 
+Step rand_moves(Player::piece pawn, Player::piece** board){
+    Step move;
+    int way = 0;
+    if(pawn == Player::piece::x) way = 1;
+    else way = -1;
+    Step* make_move = moves(way, pawn, board);
 
+    int count, x;
+    count = x = 0;
+    for(int i = 0; (i < 40) && (make_move[i].move != Player::piece::e); i++) count ++;
+
+    if(count > 0){
+        srand(time(NULL)*time(NULL)/rand());
+        x = (std::rand() % count);
+        move = make_move[x];
+    }
+    delete[] make_move;
+    return move;
 }
 
 struct Player::Impl{
@@ -443,8 +446,55 @@ void Player::init_board(const std::string& filename) const{
     std::cout<< "Init over"<<std::endl;
 }
 
+Player::piece** copy_board(Player::piece** temp,Player::piece** copy){
+    for(int i = 0; i < SIZE; i ++){
+        for(int j = 0; j < SIZE; j++){
+            temp[i][j] = copy[i][j];
+        }
+    }
+    return temp;
+}
+
+Player::piece** insert_board(Step moves, Player::piece** const board){
+    Player::piece** temp = board;
+    temp[moves.begin[0]][moves.begin[1]] = Player::piece::e;
+    if(moves.move == Player::piece::x) 
+        temp[moves.end[0]][moves.end[1]] = (moves.end[0] == (SIZE - 1)) ? Player::piece::X : Player::piece::x;
+    else if(moves.move == Player::piece::o) 
+        temp[moves.end[0]][moves.end[1]] = (moves.end[0] == 0) ? Player::piece::O : Player::piece::o;
+    else temp[moves.end[0]][moves.end[1]] = moves.move;
+    temp[moves.take[0]][moves.take[1]] = Player::piece::e;
+    return temp;
+}
+
+//dubbio
 void Player::move(){
-    
+    Player::piece** board = newboard();
+    Player::piece** result;
+    Step move;
+    Player::piece pawn;
+    Impl* temp = this->pimpl;
+    int count = 0;
+    /*while(temp->next){
+        temp = temp->next;
+    }*/
+    board = copy_board(board, temp->board);
+    if(temp->player_nr == 1) pawn = x;
+    else pawn = o;
+
+    move = rand_moves(pawn, board);
+    board = copy_board(board, temp->board);
+    result = insert_board(move, board);
+
+    while(temp->next){
+        count++;
+        temp = temp->next;
+    }
+
+    temp->next = new Impl{newboard(), nullptr, count+1, temp->player_nr};
+    temp = temp->next;
+    copy_board(temp->board, result);
+    delete[] board;
 }
 
 int main(){

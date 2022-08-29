@@ -1,6 +1,6 @@
 #include "player.hpp"
 
-#include <time.h>
+//#include <time.h>
 #define SIZE 8
 #define SIZEX 12
 #define SIZEO 12
@@ -193,27 +193,22 @@ Step* moves(int way, Player::piece pawn, Player::piece** const board){
 
 //sistemare codice
 Step rand_moves(Player::piece pawn, Player::piece** board){
-    //std::cout<<"Rand called"<<std::endl;
     Step move;
     int way = 0;
     if(pawn == Player::piece::x) way = 1;
     else way = -1;
-    //std::cout<<"STOP"<<std::endl;
+
     Step* make_move = moves(way, pawn, board);
-    
     int count, x;
     count = x = 0;
     for(int i = 0; (i < 40) && (make_move[i].move != Player::piece::e); i++) count ++;
 
     if(count > 0){
-        srand(time(NULL)*time(NULL)/rand());
+        //srand(time(NULL)*time(NULL)/rand());
         x = (std::rand() % count);
-        //std::cout<<"x "<<x<<std::endl;
         move = make_move[x];
     }
     delete[] make_move;
-    //std::cout<<"x "<<move.end[0]<<std::endl;
-    //std::cout<<"y "<<move.end[1]<<std::endl;
     return move;
 }
 
@@ -248,17 +243,14 @@ void clearboard(Player::piece** board){
 }
 
 Player::Player(int player_nr){
-    //std::cout<< "constructor called"<<std::endl;
     if(player_nr != 1 && player_nr != 2){
         throw player_exception{player_exception::index_out_of_bounds, "player_nr must be either 1 or 2"};
     }
     pimpl = new Impl{ nullptr, nullptr, player_nr, 0};
     pimpl->board = newboard();
-    //std::cout<< "constructor over"<<std::endl;
 }
 
 Player::~Player(){
-    //std::cout<< "destructor called"<<std::endl;
     while(pimpl != nullptr){
         Impl* temp = pimpl;
         pimpl = pimpl->next;
@@ -269,34 +261,14 @@ Player::~Player(){
         delete temp;
     }
     delete pimpl;
-    //std::cout<< "destructor over"<<std::endl;
 }
 
 Player::Player(const Player& copy){
-    //std::cout<< "copy called"<<std::endl;
     this->pimpl = new Impl{newboard(), nullptr, copy.pimpl->player_nr, copy.pimpl->board_count};
     Impl* temp = this->pimpl;
     Impl* copytemp = copy.pimpl;
-    /*
+
     while(copytemp != nullptr){
-        temp->player_nr = copytemp->player_nr;;
-        temp->board_count = copytemp->board_count;
-        temp->board = newboard();
-        
-        for(int i = 0; i < SIZE; i++){
-            for(int j = 0; j < SIZE; j++){
-                temp->board[i][j] = copytemp->board[i][j];
-            }
-        }
-        
-        temp = temp->next;
-        if(copytemp->next != nullptr){
-            temp = new Impl{nullptr};
-        }
-        copytemp = copytemp->next;
-    }*/
-    while(copytemp != nullptr){
-        //temp = new Impl{newboard(), nullptr, copytemp->player_nr, copytemp->board_count};
         for(int i = 0; i < SIZE; i++){
             for(int j = 0; j < SIZE; j++){
                 temp->board[i][j] = copytemp->board[i][j];
@@ -308,11 +280,9 @@ Player::Player(const Player& copy){
         }
         copytemp = copytemp->next;
     }
-    //std::cout<< "copy over"<<std::endl;
 }
 
 Player& Player::operator=(const Player& copy){
-    //std::cout<< "assignment called"<<std::endl;
     if(this->pimpl == copy.pimpl) return *this;
     else{
         Impl* temp = this->pimpl;
@@ -321,8 +291,10 @@ Player& Player::operator=(const Player& copy){
             delete[] temp->board[i];
         }
         delete[] temp->board;
+
         temp = new Impl{newboard(), nullptr, copy.pimpl->player_nr, copy.pimpl->board_count};
         Impl* copytemp = copy.pimpl;
+
         while(copytemp != nullptr){
             temp = new Impl{newboard(), nullptr, copytemp->player_nr, copytemp->board_count};
             for(int i = 0; i < SIZE; i++){
@@ -335,110 +307,42 @@ Player& Player::operator=(const Player& copy){
                 temp = new Impl{nullptr};
             }
             copytemp = copytemp->next;
-            //std::cout<<"assignment over"<<std::endl;
         }
         return *this;
     }
 }
 
 Player::piece Player::operator()(int r, int c, int history_offset) const{
-    //std::cout<< "operator() called"<<std::endl;
     int count = -1;
     Impl* temp = this->pimpl;
     while(temp != nullptr){
         temp = temp->next;
         count++;
     }
+
     if(count < history_offset )
         throw player_exception{player_exception::index_out_of_bounds,"board not found"};
     temp = this->pimpl;
+    
     while(count > history_offset){
         temp = temp->next;
         count--;
     }
-    //std::cout<< "operator() over"<<std::endl;
     return temp->board[r][c];
 }
 
 //sistemare codice
 void Player::load_board(const std::string& filename){
-    //std::cout<<"Load called"<<std::endl;
-    /*
-    Impl* temp;
-    int tail;
-    if(this->pimpl->board == nullptr){
-        this->pimpl->board = newboard();
-        temp = this->pimpl;
-        tail = this->pimpl->board_count;
-    }
-    else{
-        temp = this->pimpl;
-        while(temp->next != nullptr){
-            temp = temp->next;
-        }
-        tail = temp->board_count;
-        temp->next = new Impl{newboard(), nullptr, this->pimpl->player_nr, tail+1};
-        temp = temp->next;
-    }
-    std::ifstream f(filename.c_str());
-    bool test = false;
-    test = f.good();
-	
-    if(!test) throw player_exception{player_exception::index_out_of_bounds, "file not found"};
-    std::fstream file(filename, std::fstream::in);
-    Player::piece** board = newboard();
-    char cell;
-    int i = SIZE - 1, j = 0, xcount = 0, ocount = 0;
-    
-    while(file.get(cell)){
-        if(cell != '\n'){
-            if(i < 0){
-                clearboard(board);
-                throw player_exception{player_exception::index_out_of_bounds, "too much pieces"};
-            }
-            if((i+j) % 2 == 0 && cell != ' '){
-                clearboard(board);
-                std::cout<<"Block"<<std::endl;
-                throw player_exception{player_exception::index_out_of_bounds, "piece in a white space"};
-            }
-            if(cell == 'o' || cell == 'O') ocount++;
-            if(cell == 'x' || cell == 'X') xcount++;
-            board[i][j] = convert_piece(cell);
-            j++;
-            if(j == SIZE){
-                i--;
-                j = 0;
-            }
-        }
-        file.get(cell);
-    }
-    file.close();
-    for(int i = 0; i < SIZE; i++){
-        for(int j = 0; j < SIZE; j++){
-            std::cout<<convert_char(board[i][j])<<" ";
-        }
-        std::cout<<std::endl;   
-    }
-    if(xcount > SIZEX){
-		clearboard(board);
-		throw player_exception{player_exception::invalid_board, "too many x pieces"};
-	}
-	if(ocount > SIZEO){
-		clearboard(board);
-		throw player_exception{player_exception::invalid_board, "too many o pieces"};
-	}
-    clearboard(board);
-    */
     if(this->pimpl->next == nullptr)
         this->pimpl->board = newboard();
+
     Impl* temp = this->pimpl;
     int lastIndex = this->pimpl->board_count;
     while(temp->next) {
         lastIndex++;
         temp = temp->next;
     }
-    /*if(!file_exists(filename))
-        throw player_exception{player_exception::missing_file, "ERROR: file not found"};*/
+
     std::fstream file(filename, std::fstream::in);
     Player::piece** board = newboard();
     char c;
@@ -470,13 +374,11 @@ void Player::load_board(const std::string& filename){
         }
         if(c != '\n'){
             board[i][j] = convert_piece(c);
-            //std::cout << to_char(board[i][j]);
             j++;
             readCharacters++;
             if(j == SIZE){
                 j = 0;
                 i--;
-                //std::cout << std::endl;
             }
         }
         if (file.get(c) && c != ' ' && c != '\n' ){
@@ -499,6 +401,7 @@ void Player::load_board(const std::string& filename){
         last_index++;
         temp = temp->next;
     }
+
     temp->next = new Impl{
             newboard(),
             nullptr,
@@ -512,12 +415,10 @@ void Player::load_board(const std::string& filename){
         }
     }
     clearboard(board);
-    //std::cout<<"Load over"<<std::endl;
 }
 
 //sistemare codice
 void Player::store_board(const std::string& filename, int history_offset) const{
-    //std::cout<< "Store called"<<std::endl;
     int count = -1;
     Impl* temp = this->pimpl;
     while(temp != nullptr){
@@ -531,7 +432,6 @@ void Player::store_board(const std::string& filename, int history_offset) const{
     while(temp->board_count != index_required){
         temp = temp->next;
     }
-    //std::cout<< "STOP"<<std::endl;
     std::fstream file;
     file.open(filename, std::fstream::out);
     for(int i = (SIZE - 1); i >= 0; i--) {
@@ -545,26 +445,9 @@ void Player::store_board(const std::string& filename, int history_offset) const{
     }
 
     file.close();
-    /*while(count > history_offset){
-        temp = temp->next;
-        count--;
-    }
-    file.open(filename, std::fstream::out);
-    for(int i = SIZE - 1; i >= 0; i--){
-        for(int j = 0; j <= SIZE - 1; j++){
-            file <<convert_char(temp->board[i][j]);
-            if(j != SIZE - 1)
-                file <<" ";
-        }
-        if(i != 0)
-            file <<"\n";
-    }
-    file.close();*/
-    //std::cout<< "Store over"<<std::endl;
 }
 
 void Player::init_board(const std::string& filename) const{
-    //std::cout<< "Init called"<<std::endl;
     Player::piece** board = newboard();
     for(int i = 0; i < SIZE; i++){
         for(int j = 0; j <= SIZE - 1; j++){
@@ -581,7 +464,7 @@ void Player::init_board(const std::string& filename) const{
             }
         }
     }
-    //std::cout<< "STOP"<<std::endl;
+
     std::fstream file;
     file.open(filename, std::fstream::out);
     for(int i = SIZE - 1; i >= 0; i--){
@@ -593,9 +476,9 @@ void Player::init_board(const std::string& filename) const{
         if(i != 0)
             file <<"\n";
     }
+
     file.close();
     clearboard(board);
-    //std::cout<< "Init over"<<std::endl;
 }
 
 Player::piece** copy_board(Player::piece** temp,Player::piece** copy){
@@ -624,7 +507,6 @@ Player::piece** insert_board(Step moves, Player::piece** const board){
 
 //sistemare codice
 void Player::move(){
-    //std::cout<<"Move called"<<std::endl;
     Player::piece** board = newboard();
     Player::piece** result;
     Step move;
@@ -638,12 +520,12 @@ void Player::move(){
     if(temp->player_nr == 2) pawn = o;
     else pawn = x;
     move = rand_moves(pawn, board);
-    //std::cout<<"STOP"<<std::endl;
     
     board = copy_board(board, temp->board);
     result = insert_board(move, board);
     temp = this->pimpl;
     count = this->pimpl->board_count;
+
     while(temp->next){
         count++;
         temp = temp->next;
@@ -653,11 +535,9 @@ void Player::move(){
     temp = temp->next;
     temp->board = copy_board(temp->board, result);
     clearboard(board);
-    //std::cout<<"Move over"<<std::endl;
 }
 
 bool Player::valid_move() const {
-    //std::cout<<"Valid move called"<<std::endl;
     Step* x_move;
 	Step* o_move;
     bool check = false;
@@ -668,28 +548,7 @@ bool Player::valid_move() const {
     }
     Impl* temp2 = temp1;
     temp1 = temp1->next;
-    /*std::cout<<"Board 1"<<std::endl;
-    for(int i = SIZE - 1; i >= 0; i--){
-        for(int j = 0; j <= SIZE - 1; j++){
-            std::cout<<convert_char(temp1->board[i][j]);
-            if(j != SIZE - 1)
-                std::cout<<" ";
-        }
-        if(i != 0)
-            std::cout<<"\n";
-    }
-    std::cout<<std::endl;
-    std::cout<<"Board 2"<<std::endl;
-    for(int i = SIZE - 1; i >= 0; i--){
-        for(int j = 0; j <= SIZE - 1; j++){
-            std::cout<<convert_char(temp2->board[i][j]);
-            if(j != SIZE - 1)
-                std::cout<<" ";
-        }
-        if(i != 0)
-            std::cout<<"\n";
-    }
-    std::cout<<std::endl;*/
+
 	if(are_equal(temp1->board, temp2->board)){
         return check;
     }
@@ -707,10 +566,8 @@ bool Player::valid_move() const {
         }
         o_move = moves(-1, Player::piece::o, start);
         for(int i = 0; ((i < 40) && (o_move[i].move != Player::piece::e) && (!check)); i++){
-            //std::cout<<"Check "<<std::endl;
             copy = copy_board(copy, start);
             if(are_equal(end, insert_board(o_move[i], copy))) check = true;
-            //std::cout<<"RES "<<check<<std::endl;
         }
         clearboard(start);
         clearboard(end);
@@ -718,7 +575,6 @@ bool Player::valid_move() const {
         delete[] x_move;
         delete[] o_move;
     }
-    //std::cout<<"Valid move over"<<std::endl;
     return check;
 }
 
@@ -819,8 +675,7 @@ int main(){
             p2.store_board("board_" + std::to_string(++round) + ".txt");
         }
 
-        //  (p1.wins())? cout << "Player 1 wins!" << endl : cout << "Player 2 wins!" << endl;
-
+        (p1.wins())? std::cout << "Player 1 wins!" << std::endl : std::cout << "Player 2 wins!" << std::endl;
         p2.store_board("board_exit.txt",0);
 
 

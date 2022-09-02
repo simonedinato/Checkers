@@ -21,6 +21,7 @@ char convert_char(Player::piece i){
         default:
             break;
     }
+    throw player_exception{player_exception::index_out_of_bounds, "Wrong conversion"};
 }
 
 Player::piece convert_piece(char i){
@@ -38,6 +39,7 @@ Player::piece convert_piece(char i){
         default:
             break;
     }
+    throw player_exception{player_exception::index_out_of_bounds, "Wrong conversion"};
 }
 
 struct Step{
@@ -79,6 +81,11 @@ void check(int x, int y, int& next_x, int& next_y, int way,int& count,  Player::
     if((x >= 0) && (x < SIZE) && (y >= 0) && (y < SIZE)){
         
         //check spaces
+        /*
+        memory leak
+        */
+        //std::cout<<"X "<<next_x<<std::endl;
+        //std::cout<<"Y "<<next_y<<std::endl;
         if(board[next_x][next_y] == Player::piece::e){
             //make move
             moves[count].step_pawn(x, y, next_x, next_y, 0, 0, pawn);
@@ -192,26 +199,35 @@ Step* moves(int way, Player::piece pawn, Player::piece** const board){
 }
 
 //sistemare codice
+//fixed
+/*
+Returns the random coordinates of one of many possible moves
+*/
 Step rand_moves(Player::piece pawn, Player::piece** board){
     Step move;
     int way = 0;
-    if(pawn == Player::piece::x) way = 1;
-    else way = -1;
+    int count, num;
+    count = num = 0;
+    if(pawn == Player::piece::o) way = -1;
+    else way = 1;
 
     Step* make_move = moves(way, pawn, board);
-    int count, x;
-    count = x = 0;
-    for(int i = 0; (i < 40) && (make_move[i].move != Player::piece::e); i++) count ++;
+
+    for(int i = 0;(i < 40) && (make_move[i].move != Player::piece::e); i++)count ++;
 
     if(count > 0){
         //srand(time(NULL)*time(NULL)/rand());
-        x = (std::rand() % count);
-        move = make_move[x];
+        num = (std::rand() % count);
+        move = make_move[num];
     }
+
     delete[] make_move;
     return move;
 }
 
+/*
+Check if two boards are equals
+*/
 bool are_equal(Player::piece** board1, Player::piece** board2){
     for(int i = 0; i < SIZE; i++) {
 		for(int j = 0; j < SIZE; j++) {
@@ -240,6 +256,15 @@ void clearboard(Player::piece** board){
         delete[] board[y];
     }
     delete[] board;
+}
+
+Player::piece** copy_board(Player::piece** temp,Player::piece** copy){
+    for(int i = 0; i < SIZE; i ++){
+        for(int j = 0; j < SIZE; j++){
+            temp[i][j] = copy[i][j];
+        }
+    }
+    return temp;
 }
 
 Player::Player(int player_nr){
@@ -332,50 +357,42 @@ Player::piece Player::operator()(int r, int c, int history_offset) const{
 }
 
 //sistemare codice
+//fixed
+/*
+Load the board from "filename"
+*/
 void Player::load_board(const std::string& filename){
-    if(this->pimpl->next == nullptr)
-        this->pimpl->board = newboard();
+    Player::piece** board = newboard();
+    char c;
+    int x_count = 0;
+    int o_count = 0;
+    int count = 0, i = SIZE - 1, j = 0;
 
+    if(this->pimpl->next == nullptr) this->pimpl->board = newboard();
     Impl* temp = this->pimpl;
-    int lastIndex = this->pimpl->board_count;
+
+    int pc = this->pimpl->board_count;
     while(temp->next) {
-        lastIndex++;
+        pc++;
         temp = temp->next;
     }
 
     std::fstream file(filename, std::fstream::in);
-    Player::piece** board = newboard();
-    char c;
-    int count_x=0;
-    int count_o=0;
-    int readCharacters = 0, i = SIZE - 1, j = 0;
     while(file.get(c)) {
         if (i<0){
             clearboard(board);
             throw player_exception{player_exception::invalid_board, "ERROR: invalid board"};
         }
-        switch (c) {
-            case 'x':
-                count_x++;
-                break;
-            case 'X':
-                count_x++;
-                break;
-            case 'o':
-                count_o++;
-                break;
-            case 'O':
-                count_o++;
-                break;
-        }
-        if ((i+j)%2 == 0 && c != ' ' && c != '\n' ){
+        if(c == 'x' || c == 'X') x_count ++;
+        else if(c == 'o' || c == 'O') o_count++;
+        if ((i + j) % 2 == 0 && c != ' ' && c != '\n' ){
             clearboard(board);
             throw player_exception{player_exception::invalid_board, "ERROR: invalid board"};
         }
         if(c != '\n'){
             board[i][j] = convert_piece(c);
             j++;
-            readCharacters++;
+            count++;
             if(j == SIZE){
                 j = 0;
                 i--;
@@ -385,20 +402,20 @@ void Player::load_board(const std::string& filename){
             clearboard(board);
             throw player_exception{player_exception::invalid_board, "ERROR: invalid board"};
         }
-        if(readCharacters > (SIZE * SIZE)){
+        if(count > (SIZE * SIZE)){
             clearboard(board);
             throw player_exception{player_exception::invalid_board, "ERROR: invalid board"};
         }
-        if(count_x>12 || count_o>12){
+        if(x_count>12 || o_count>12){
             clearboard(board);
             throw player_exception{player_exception::invalid_board, "ERROR: invalid board"};
         }
     }
     file.close();
     temp = this->pimpl;
-    int last_index = this->pimpl->board_count;
+    int count2 = this->pimpl->board_count;
     while(temp->next) {
-        last_index++;
+        count2++;
         temp = temp->next;
     }
 
@@ -406,34 +423,39 @@ void Player::load_board(const std::string& filename){
             newboard(),
             nullptr,
             this->pimpl->player_nr,
-            lastIndex+1
+            pc + 1
     };
+
     temp = temp->next;
-    for(i = 0; i < SIZE; i++){
-        for(j = 0; j < SIZE; j++) {
-            temp->board[i][j] = board[i][j];
-        }
-    }
+    temp->board = copy_board(temp->board, board);
     clearboard(board);
 }
 
 //sistemare codice
+//fixed
+/*
+store the board in "filename" and in "hystory_offset" hystory postion
+*/
 void Player::store_board(const std::string& filename, int history_offset) const{
-    int count = -1;
     Impl* temp = this->pimpl;
+    int count = -1;
     while(temp != nullptr){
         count = temp->board_count;
         temp = temp->next;
     }
     if(count < history_offset || history_offset < 0 || count + 1 == 0)
         throw player_exception{player_exception::index_out_of_bounds,"board not found"};
+    
     temp = this->pimpl;
-    int index_required = count - history_offset;
-    while(temp->board_count != index_required){
+    int pc = count - history_offset;
+
+    while(temp->board_count != pc){
         temp = temp->next;
     }
+
     std::fstream file;
     file.open(filename, std::fstream::out);
+
     for(int i = (SIZE - 1); i >= 0; i--) {
         for(int j = 0; j < SIZE; j++) {
             file << convert_char(temp->board[i][j]);
@@ -447,6 +469,9 @@ void Player::store_board(const std::string& filename, int history_offset) const{
     file.close();
 }
 
+/*
+Initialize a board and store it into "filename"
+*/
 void Player::init_board(const std::string& filename) const{
     Player::piece** board = newboard();
     for(int i = 0; i < SIZE; i++){
@@ -481,26 +506,25 @@ void Player::init_board(const std::string& filename) const{
     clearboard(board);
 }
 
-Player::piece** copy_board(Player::piece** temp,Player::piece** copy){
-    for(int i = 0; i < SIZE; i ++){
-        for(int j = 0; j < SIZE; j++){
-            temp[i][j] = copy[i][j];
-        }
-    }
-    return temp;
-}
-
 //sistemare codice
+//fixed
+/*
+insert moves in a board
+*/
 Player::piece** insert_board(Step moves, Player::piece** const board){
     Player::piece** temp = board;
     temp[moves.begin[0]][moves.begin[1]] = Player::piece::e;
+    Player::piece pawn;
     if(moves.move == Player::piece::x)
-        if(moves.end[0] == (SIZE - 1)) temp[moves.end[0]][moves.end[1]] = Player::piece::X;
-        else temp[moves.end[0]][moves.end[1]] = Player::piece::x;
+        if(moves.end[0] == (SIZE - 1)) pawn = Player::piece::X;
+        else pawn = Player::piece::x;
+
     else if(moves.move == Player::piece::o) 
-        if(moves.end[0] == 0) temp[moves.end[0]][moves.end[1]] = Player::piece::O;
-        else temp[moves.end[0]][moves.end[1]] = Player::piece::o;
-    else temp[moves.end[0]][moves.end[1]] = moves.move;
+        if(moves.end[0] == 0) pawn = Player::piece::O;
+        else pawn = Player::piece::o;
+
+    else pawn = moves.move;
+    temp[moves.end[0]][moves.end[1]] == pawn;
     temp[moves.take[0]][moves.take[1]] = Player::piece::e;
     return temp;
 }
@@ -664,7 +688,7 @@ int main(){
         p2.move();
         p2.store_board("board_2.txt");
         int round = 2;
-        while(/*p1.valid_move() && p2.valid_move() &&*/ count != 50){
+        while(/*p1.valid_move() && p2.valid_move() &&*/ count != 30){
             //std::cout<<"STOP"<<std::endl;
             count++;
             p1.load_board("board_" + std::to_string(round) + ".txt");

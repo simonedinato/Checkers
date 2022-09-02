@@ -84,6 +84,8 @@ void check(int x, int y, int& next_x, int& next_y, int way,int& count,  Player::
         /*
         memory leak
         */
+        //std::cout<<"X "<<next_x<<std::endl;
+        //std::cout<<"Y "<<next_y<<std::endl;
         if(board[next_x][next_y] == Player::piece::e){
             //make move
             moves[count].step_pawn(x, y, next_x, next_y, 0, 0, pawn);
@@ -204,16 +206,14 @@ Returns the random coordinates of one of many possible moves
 Step rand_moves(Player::piece pawn, Player::piece** board){
     Step move;
     int way = 0;
-    int count, num, i;
-    count = num = i = 0;
+    int count, num;
+    count = num = 0;
     if(pawn == Player::piece::o) way = -1;
     else way = 1;
 
     Step* make_move = moves(way, pawn, board);
-    while((i < 40) && (make_move[i].move != Player::piece::e)){
-        count ++;
-        i++;
-    }
+
+    for(int i = 0;(i < 40) && (make_move[i].move != Player::piece::e); i++)count ++;
 
     if(count > 0){
         //srand(time(NULL)*time(NULL)/rand());
@@ -256,6 +256,15 @@ void clearboard(Player::piece** board){
         delete[] board[y];
     }
     delete[] board;
+}
+
+Player::piece** copy_board(Player::piece** temp,Player::piece** copy){
+    for(int i = 0; i < SIZE; i ++){
+        for(int j = 0; j < SIZE; j++){
+            temp[i][j] = copy[i][j];
+        }
+    }
+    return temp;
 }
 
 Player::Player(int player_nr){
@@ -460,6 +469,9 @@ void Player::store_board(const std::string& filename, int history_offset) const{
     file.close();
 }
 
+/*
+Initialize a board and store it into "filename"
+*/
 void Player::init_board(const std::string& filename) const{
     Player::piece** board = newboard();
     for(int i = 0; i < SIZE; i++){
@@ -494,26 +506,25 @@ void Player::init_board(const std::string& filename) const{
     clearboard(board);
 }
 
-Player::piece** copy_board(Player::piece** temp,Player::piece** copy){
-    for(int i = 0; i < SIZE; i ++){
-        for(int j = 0; j < SIZE; j++){
-            temp[i][j] = copy[i][j];
-        }
-    }
-    return temp;
-}
-
 //sistemare codice
+//fixed
+/*
+insert moves in a board
+*/
 Player::piece** insert_board(Step moves, Player::piece** const board){
     Player::piece** temp = board;
     temp[moves.begin[0]][moves.begin[1]] = Player::piece::e;
+    Player::piece pawn;
     if(moves.move == Player::piece::x)
-        if(moves.end[0] == (SIZE - 1)) temp[moves.end[0]][moves.end[1]] = Player::piece::X;
-        else temp[moves.end[0]][moves.end[1]] = Player::piece::x;
+        if(moves.end[0] == (SIZE - 1)) pawn = Player::piece::X;
+        else pawn = Player::piece::x;
+
     else if(moves.move == Player::piece::o) 
-        if(moves.end[0] == 0) temp[moves.end[0]][moves.end[1]] = Player::piece::O;
-        else temp[moves.end[0]][moves.end[1]] = Player::piece::o;
-    else temp[moves.end[0]][moves.end[1]] = moves.move;
+        if(moves.end[0] == 0) pawn = Player::piece::O;
+        else pawn = Player::piece::o;
+
+    else pawn = moves.move;
+    temp[moves.end[0]][moves.end[1]] == pawn;
     temp[moves.take[0]][moves.take[1]] = Player::piece::e;
     return temp;
 }
@@ -677,7 +688,7 @@ int main(){
         p2.move();
         p2.store_board("board_2.txt");
         int round = 2;
-        while(/*p1.valid_move() && p2.valid_move() &&*/ count != 50){
+        while(/*p1.valid_move() && p2.valid_move() &&*/ count != 30){
             //std::cout<<"STOP"<<std::endl;
             count++;
             p1.load_board("board_" + std::to_string(round) + ".txt");

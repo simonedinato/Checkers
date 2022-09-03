@@ -84,8 +84,8 @@ void check(int x, int y, int& next_x, int& next_y, int way,int& count,  Player::
         /*
         memory leak
         */
-        //std::cout<<"X "<<next_x<<std::endl;
-        //std::cout<<"Y "<<next_y<<std::endl;
+        std::cout<<"X "<<next_x<<std::endl;
+        std::cout<<"Y "<<next_y<<std::endl;
         if(board[next_x][next_y] == Player::piece::e){
             //make move
             moves[count].step_pawn(x, y, next_x, next_y, 0, 0, pawn);
@@ -398,15 +398,7 @@ void Player::load_board(const std::string& filename){
                 i--;
             }
         }
-        if (file.get(c) && c != ' ' && c != '\n' ){
-            clearboard(board);
-            throw player_exception{player_exception::invalid_board, "ERROR: invalid board"};
-        }
-        if(count > (SIZE * SIZE)){
-            clearboard(board);
-            throw player_exception{player_exception::invalid_board, "ERROR: invalid board"};
-        }
-        if(x_count>12 || o_count>12){
+        if (file.get(c) && c != ' ' && c != '\n' || count > (SIZE * SIZE) || x_count>12 || o_count>12){
             clearboard(board);
             throw player_exception{player_exception::invalid_board, "ERROR: invalid board"};
         }
@@ -444,7 +436,7 @@ void Player::store_board(const std::string& filename, int history_offset) const{
         temp = temp->next;
     }
     if(count < history_offset || history_offset < 0 || count + 1 == 0)
-        throw player_exception{player_exception::index_out_of_bounds,"board not found"};
+        throw player_exception{player_exception::index_out_of_bounds,"ERROR: invalid hystory_offset"};
     
     temp = this->pimpl;
     int pc = count - history_offset;
@@ -518,13 +510,13 @@ Player::piece** insert_board(Step moves, Player::piece** const board){
     if(moves.move == Player::piece::x)
         if(moves.end[0] == (SIZE - 1)) pawn = Player::piece::X;
         else pawn = Player::piece::x;
-
     else if(moves.move == Player::piece::o) 
         if(moves.end[0] == 0) pawn = Player::piece::O;
         else pawn = Player::piece::o;
-
     else pawn = moves.move;
-    temp[moves.end[0]][moves.end[1]] == pawn;
+    //std::cout<<"Pawn "<<convert_char(pawn)<<std::endl;
+    temp[moves.end[0]][moves.end[1]] = pawn;
+    //std::cout<<"TEMP "<<convert_char(temp[moves.end[0]][moves.end[1]])<<std::endl;
     temp[moves.take[0]][moves.take[1]] = Player::piece::e;
     return temp;
 }
@@ -538,13 +530,23 @@ void Player::move(){
     Impl* temp = this->pimpl;
     int count = -1;
     while(temp->next){
+        //count = temp->board_count;
         temp = temp->next;
     }
+    /*if(count + 1 == 0)
+        throw player_exception{player_exception::index_out_of_bounds, "ERROR: empty history"};*/
     board = copy_board(board, temp->board);
     if(temp->player_nr == 2) pawn = o;
     else pawn = x;
     move = rand_moves(pawn, board);
-    
+    /*std::cout<<"End X "<<move.end[0]<<std::endl;
+    std::cout<<"End Y "<<move.end[1]<<std::endl;
+
+    std::cout<<"Take X "<<move.take[0]<<std::endl;
+    std::cout<<"Take Y "<<move.take[1]<<std::endl;
+
+    std::cout<<"Begin X "<<move.begin[0]<<std::endl;
+    std::cout<<"Begin Y "<<move.begin[1]<<std::endl;*/
     board = copy_board(board, temp->board);
     result = insert_board(move, board);
     temp = this->pimpl;
@@ -555,7 +557,7 @@ void Player::move(){
         temp = temp->next;
     }
 
-    temp->next = new Impl{newboard(), nullptr, temp->player_nr, count+1};
+    temp->next = new Impl{newboard(), nullptr, temp->player_nr, count + 1};
     temp = temp->next;
     temp->board = copy_board(temp->board, result);
     clearboard(board);
@@ -688,7 +690,7 @@ int main(){
         p2.move();
         p2.store_board("board_2.txt");
         int round = 2;
-        while(/*p1.valid_move() && p2.valid_move() &&*/ count != 30){
+        while(/*p1.valid_move() && p2.valid_move() &&*/ count != 50){
             //std::cout<<"STOP"<<std::endl;
             count++;
             p1.load_board("board_" + std::to_string(round) + ".txt");

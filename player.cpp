@@ -1,6 +1,6 @@
 #include "player.hpp"
 
-//#include <time.h>
+#include <time.h>
 #define SIZE 8
 #define SIZEX 12
 #define SIZEO 12
@@ -78,34 +78,51 @@ void check(int x, int y, int& next_x, int& next_y, int way,int& count,  Player::
     int i = next_x - x;
     int j = next_y - y;
     //check board limits
-    if((x >= 0) && (x < SIZE) && (y >= 0) && (y < SIZE)){
+    /*std::cout<<"X "<<x<<std::endl;
+    std::cout<<"Y "<<y<<std::endl;
+    std::cout<<"Next X "<<next_x<<std::endl;
+    std::cout<<"Next Y "<<next_y<<std::endl;*/
+    if((next_x >= 0) && (next_x < SIZE) && (next_y >= 0) && (next_y < SIZE)){
         
         //check spaces
-        /*
-        memory leak
-        */
-        std::cout<<"X "<<next_x<<std::endl;
-        std::cout<<"Y "<<next_y<<std::endl;
+
+        
+        /*std::cout<<"X "<<x<<std::endl;
+        std::cout<<"Y "<<y<<std::endl;
+        std::cout<<"Board["<<x<<"]["<<y<<"]"<<std::endl;
+        std::cout<<"Pedina "<<convert_char(board[x][y])<<std::endl;
+        std::cout<<"Next X "<<next_x<<std::endl;
+        std::cout<<"Next Y "<<next_y<<std::endl;
+        std::cout<<"Board next["<<next_x<<"]["<<next_y<<"]"<<std::endl;*/
         if(board[next_x][next_y] == Player::piece::e){
             //make move
             moves[count].step_pawn(x, y, next_x, next_y, 0, 0, pawn);
+            //std::cout<<"STOP"<<std::endl;
             count++;
         }
         //try to eat
         else if(board[next_x][next_y] == e_pawn){
             //check new board limits
-            if((next_x + (way * i) >= 0) && (next_x + (way * i) < SIZE) && (next_y + (way * j)>= 0) && (next_y + (way * j) < SIZE)){
+            if((next_x + i >= 0) && (next_x + i < SIZE) && (next_y + j >= 0) && (next_y + j < SIZE)){
                 //check new spaces
+                //std::cout<<"i "<<i<<std::endl;
+                //std::cout<<"j "<<j<<std::endl;
                 /*std::cout<<"X "<<x<<std::endl;
                 std::cout<<"Y "<<y<<std::endl;
+                std::cout<<"Board["<<x<<"]["<<y<<"]"<<std::endl;
+                std::cout<<"Pedina "<<convert_char(board[x][y])<<std::endl;
                 std::cout<<"Next X "<<next_x<<std::endl;
                 std::cout<<"Next Y "<<next_y<<std::endl;
-                std::cout<<"Board[ "<<(next_x + (way * i))<<"]["<<(next_y + (way * j))<<"]"<<std::endl;
-                std::cout<<"Pedina "<<convert_char(board[next_x + (way * i)][next_y + (way * j)])<<std::endl;*/
-                if(board[next_x + (way * i)][next_y + (way * j)] == Player::piece::e){
+                std::cout<<"Board next["<<next_x<<"]["<<next_y<<"]"<<std::endl;
+                std::cout<<"Pedina trovata "<<convert_char(board[next_x][next_y])<<std::endl;
+                std::cout<<"Board next + way["<<(next_x + i)<<"]["<<(next_y + j)<<"]"<<std::endl;
+                std::cout<<"Pedina trovata next + way "<<convert_char(board[next_x + i][next_y + j])<<std::endl;*/
+                if(board[next_x + i][next_y + j] == Player::piece::e){
+                    //std::cout<<"STOP"<<std::endl;
                     //std::cout<<"STOP"<<std::endl;
                     //make move
-                    moves[count].step_pawn(x, y, (next_x + (way * i)), (next_y + (way * j)), next_x, next_y, pawn);
+                    
+                    moves[count].step_pawn(x, y, (next_x + i), (next_y + j), next_x, next_y, pawn);
                     count++;
                 }
             }
@@ -118,21 +135,43 @@ void check_dame(int x, int y, int& next_x, int& next_y, int way,int& count, Play
     int i = next_x - x;
     int j = next_y - y;
     //check board limits
-    if((x >= 0) && (x < SIZE) && (y >= 0) && (y < SIZE)){
+    /*std::cout<<"X "<<x<<std::endl;
+    std::cout<<"Y "<<y<<std::endl;
+    std::cout<<"Next X "<<next_x<<std::endl;
+    std::cout<<"Next Y "<<next_y<<std::endl;*/
+    if((next_x >= 0) && (next_x < SIZE) && (next_y >= 0) && (next_y < SIZE)){
         //check spaces
-        if(board[x][y] == Player::piece::e){
+        if(board[next_x][next_y] == Player::piece::e){
             //make move
+            /*std::cout<<"X "<<x<<std::endl;
+            std::cout<<"Y "<<y<<std::endl;
+            std::cout<<"Board["<<x<<"]["<<y<<"]"<<std::endl;
+            std::cout<<"Pedina "<<convert_char(board[x][y])<<std::endl;
+            std::cout<<"Next X "<<next_x<<std::endl;
+            std::cout<<"Next Y "<<next_y<<std::endl;
+            std::cout<<"Board next["<<next_x<<"]["<<next_y<<"]"<<std::endl;
+            std::cout<<"Pedina trovata "<<convert_char(board[next_x][next_y])<<std::endl;*/
             moves[count].step_pawn(x, y, next_x, next_y, 0, 0, dame);
             count++;
         }
         //try to eat
         else if(board[next_x][next_y] == e_pawn || board[next_x][next_y] == e_dame){
             //check new board limits
-            if((next_x + (way * i) >= 0) && (next_x + (way * i) < SIZE) && (next_y + (way * j)>= 0) && (next_y + (way * j) < SIZE)){
+            if((next_x + i >= 0) && (next_x + i < SIZE) && (next_y + j >= 0) && (next_y + j < SIZE)){
                 //check new spaces
-                if(board[next_x + (way * i)][next_y + (way * j)] == Player::piece::e){
+                /*std::cout<<"X "<<x<<std::endl;
+                std::cout<<"Y "<<y<<std::endl;
+                std::cout<<"Board["<<x<<"]["<<y<<"]"<<std::endl;
+                std::cout<<"Pedina "<<convert_char(board[x][y])<<std::endl;
+                std::cout<<"Next X "<<next_x<<std::endl;
+                std::cout<<"Next Y "<<next_y<<std::endl;
+                std::cout<<"Board next["<<next_x<<"]["<<next_y<<"]"<<std::endl;
+                std::cout<<"Pedina trovata "<<convert_char(board[next_x][next_y])<<std::endl;
+                std::cout<<"Board next + way["<<(next_x + i)<<"]["<<(next_y + j)<<"]"<<std::endl;
+                std::cout<<"Pedina trovata next + way "<<convert_char(board[next_x + i][next_y + j])<<std::endl;*/
+                if(board[next_x + i][next_y + j] == Player::piece::e){
                     //make move
-                    moves[count].step_pawn(x, y, (next_x + (way * i)), (next_y + (way * j)), next_x, next_y, dame);
+                    moves[count].step_pawn(x, y, (next_x + i), (next_y + j), next_x, next_y, dame);
                     count++;
                 }
             }
@@ -140,17 +179,21 @@ void check_dame(int x, int y, int& next_x, int& next_y, int way,int& count, Play
     }
 }
 
-Step* moves(int way, Player::piece pawn, Player::piece** const board){
+Step* moves(int way, Player::piece pawn, Player::piece** board){
     //std::cout<<"Moves called"<<std::endl;
     int x, y, next_x, next_y, count;
     x = y = next_x = next_y = count = 0;
     Step* moves = new Step[40];
     Player::piece dame = dame_p(pawn), e_pawn = enemy(pawn), e_dame = dame_p(enemy(pawn));
 
-    for(int i = 0; i < SIZE - 1; i++){
-        for(int j = 0; j < SIZE - 1; j++){
+    for(int i = 0; i < SIZE; i++){
+        for(int j = 0; j < SIZE; j++){
             
             x = i, y = j;
+            /*std::cout<<"Pawn "<<convert_char(pawn)<<std::endl;
+            std::cout<<"Pedina "<<convert_char(board[x][y])<<std::endl;
+            std::cout<<"X "<<x<<std::endl;
+            std::cout<<"Y "<<y<<std::endl;*/
             if(pawn == board[x][y]){
                 
                 //try left
@@ -184,15 +227,15 @@ Step* moves(int way, Player::piece pawn, Player::piece** const board){
                 check_dame(x, y, next_x, next_y, way, count, dame, e_pawn, e_dame, board, moves);
                 
                 //try bottom right
-                next_x = x + way;
-                next_y = y - way;
+                next_x = x - way;
+                next_y = y + way;
                 check_dame(x, y, next_x, next_y, way, count, dame, e_pawn, e_dame, board, moves);
                 
 
             }
         }
     }
-    
+    //std::cout<<"Count "<<count<<std::endl;
     //std::cout<<"STOP"<<std::endl;
     //std::cout<<"Moves over"<<std::endl;
     return moves;
@@ -210,17 +253,20 @@ Step rand_moves(Player::piece pawn, Player::piece** board){
     count = num = 0;
     if(pawn == Player::piece::o) way = -1;
     else way = 1;
-
     Step* make_move = moves(way, pawn, board);
+    //std::cout<<"make move "<<convert_char(make_move[0].move)<<std::endl;
 
-    for(int i = 0;(i < 40) && (make_move[i].move != Player::piece::e); i++)count ++;
+    for(int i = 0;(i < 40) && (make_move[i].move != Player::piece::e); i++){
+        count ++;
+    }
 
     if(count > 0){
-        //srand(time(NULL)*time(NULL)/rand());
+        srand(time(NULL)*time(NULL)/rand());
         num = (std::rand() % count);
         move = make_move[num];
     }
-
+    //std::cout<<"Rand End X "<<move.end[0]<<std::endl;
+    //std::cout<<"Rand End Y "<<move.end[1]<<std::endl;
     delete[] make_move;
     return move;
 }
@@ -275,6 +321,7 @@ Player::Player(int player_nr){
     pimpl->board = newboard();
 }
 
+//memory leak
 Player::~Player(){
     while(pimpl != nullptr){
         Impl* temp = pimpl;
@@ -539,9 +586,9 @@ void Player::move(){
     if(temp->player_nr == 2) pawn = o;
     else pawn = x;
     move = rand_moves(pawn, board);
-    /*std::cout<<"End X "<<move.end[0]<<std::endl;
-    std::cout<<"End Y "<<move.end[1]<<std::endl;
-
+    //std::cout<<"End X "<<move.end[0]<<std::endl;
+    //std::cout<<"End Y "<<move.end[1]<<std::endl;
+    /*
     std::cout<<"Take X "<<move.take[0]<<std::endl;
     std::cout<<"Take Y "<<move.take[1]<<std::endl;
 
@@ -582,8 +629,8 @@ bool Player::valid_move() const {
         Player::piece** start =newboard();
 	    Player::piece** end = newboard();
 	    Player::piece** copy = newboard();
-        start = copy_board(start, temp1->board);
-        end = copy_board(end, temp2->board);
+        start = copy_board(start, temp2->board);
+        end = copy_board(end, temp1->board);
         
         x_move = moves(1, Player::piece::x, start);
         for(int i = 0; ((i < 40) && (x_move[i].move != Player::piece::e) && (!check)); i++){
@@ -629,6 +676,7 @@ int pieces(Player::piece** board, int player_nr){
     else{
         for(int i = 0; i < SIZE; i++) {
 		    for(int j = 0; j < SIZE; j++) {
+                //memory leak valore non inizializzato
                 if(board[i][j] == Player::piece::o || board[i][j] == Player::piece::O) count ++;
             }
         }
@@ -637,7 +685,11 @@ int pieces(Player::piece** board, int player_nr){
 }
 
 bool Player::wins(int player_nr) const{
-    int left = pieces(this->pimpl->board, player_nr);
+    Impl* temp = this->pimpl;
+    while(temp->next){
+        temp = temp->next;
+    }
+    int left = pieces(temp->board, player_nr);
     if(left != 0) return false;
     else return true;
 }
@@ -647,12 +699,16 @@ bool Player::wins() const{
 }
 
 bool Player::loses(int player_nr) const{
+    Impl* temp = this->pimpl;
+    while(temp->next){
+        temp = temp->next;
+    }
     int i;
     if(player_nr == 1) i = 2;
     else i = 1;
-    int left = pieces(this->pimpl->board, i);
-    if(left != 0) return false;
-    else return true;
+    int left = pieces(temp->board, i);
+    if(left != 0) return true;
+    else return false;
 }
 
 bool Player::loses() const{
@@ -690,13 +746,16 @@ int main(){
         p2.move();
         p2.store_board("board_2.txt");
         int round = 2;
-        while(/*p1.valid_move() && p2.valid_move() &&*/ count != 50){
+        while(p1.valid_move() && p2.valid_move() && count != 200){
             //std::cout<<"STOP"<<std::endl;
             count++;
+            //std::cout<<"Turno "<<count<<std::endl;
             p1.load_board("board_" + std::to_string(round) + ".txt");
+            //std::cout<<"Turno x"<<std::endl;
             p1.move();
             p1.store_board("board_" + std::to_string(++round) + ".txt");
             p2.load_board("board_" + std::to_string(round) + ".txt");
+            //std::cout<<"Turno o"<<std::endl;
             p2.move();
             p2.store_board("board_" + std::to_string(++round) + ".txt");
         }
@@ -713,5 +772,4 @@ int main(){
     
     return 0;
 }
-
 

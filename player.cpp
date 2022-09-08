@@ -1,6 +1,5 @@
 #include "player.hpp"
 
-//#include <time.h>
 #define SIZE 8
 #define SIZEPAWN 12
 
@@ -199,7 +198,6 @@ Step rand_moves(Player::piece pawn, Player::piece** board){
     }
 
     if(count > 0){
-        //srand(time(NULL)*time(NULL)/rand());
         num = (std::rand() % count);
         move = make_move[num];
     }
@@ -249,7 +247,6 @@ Player::Player(int player_nr){
         throw player_exception{player_exception::index_out_of_bounds, "player_nr must be either 1 or 2"};
     }
     pimpl = new Impl{ nullptr, nullptr, player_nr, 0};
-    pimpl->board = new_board();
 }
 
 Player::~Player(){
@@ -645,7 +642,7 @@ int main(){
         p2.move();
         p2.store_board("board_2.txt");
         int round = 2;
-        while(p1.valid_move() && p2.valid_move() && count != 10){
+        while(p1.valid_move() && p2.valid_move() && count != 5){
             count++;
             p1.load_board("board_" + std::to_string(round) + ".txt");
             p1.move();

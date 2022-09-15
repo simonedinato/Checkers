@@ -4,6 +4,30 @@
 #define SIZEPAWN 12
 
 
+struct Step{
+    int begin[2];
+    int take[2];
+    int end[2];
+    Player::piece move;
+    Step(){
+        for(int i = 0; i < 2; i++){
+            begin[i] = 0;
+            take[i] = 0;
+            end[i] = 0;
+        }
+        move = Player::piece::e;
+    }
+    void step_pawn(int x, int y, int next_x, int next_y, int take_x, int take_y, Player::piece p){
+        begin[0] = x;
+        begin[1] = y;
+        take[0] = take_x;
+        take[1] = take_y;
+        end[0] = next_x; 
+        end[1] = next_y;
+        move = p;
+    }
+};
+
 char convert_char(Player::piece i){
     switch(i){
         case Player::piece::x:
@@ -47,29 +71,84 @@ void clear_board(Player::piece** board){
     delete[] board;
 }
 
-struct Step{
-    int begin[2];
-    int take[2];
-    int end[2];
-    Player::piece move;
-    Step(){
-        for(int i = 0; i < 2; i++){
-            begin[i] = 0;
-            take[i] = 0;
-            end[i] = 0;
+Player::piece** new_board(){
+    Player::piece** board = new Player::piece*[SIZE];
+    for(int i = 0; i < SIZE; i++)
+        board[i] = new Player::piece[SIZE];
+    return board;
+}
+
+Player::piece** copy_board(Player::piece** temp,Player::piece** copy){
+    for(int i = 0; i < SIZE; i ++){
+        for(int j = 0; j < SIZE; j++){
+            temp[i][j] = copy[i][j];
         }
-        move = Player::piece::e;
     }
-    void step_pawn(int x, int y, int next_x, int next_y, int take_x, int take_y, Player::piece p){
-        begin[0] = x;
-        begin[1] = y;
-        take[0] = take_x;
-        take[1] = take_y;
-        end[0] = next_x; 
-        end[1] = next_y;
-        move = p;
+    return temp;
+}
+
+bool are_equal(Player::piece** board1, Player::piece** board2){
+    for(int i = 0; i < SIZE; i++) {
+		for(int j = 0; j < SIZE; j++) {
+			if(board1[i][j] != board2[i][j]) return false;
+		}
+	}
+    return true;
+}
+
+void file_insert(Player::piece** board, std::string& filename){
+    std::fstream file;
+    file.open(filename, std::fstream::out);
+
+    for(int i = (SIZE - 1); i >= 0; i--) {
+        for(int j = 0; j < SIZE; j++) {
+            file << convert_char(board[i][j]);
+            if(j != (SIZE - 1))
+                file << ' ';
+        }
+        if(i != 0)
+            file << "\n";
     }
-};
+
+    file.close();
+}
+
+Player::piece** standard_board(Player::piece** board){
+    for(int i = 0; i < SIZE; i++){
+        for(int j = 0; j <= SIZE - 1; j++){
+            if((i >= 0) && (i <= 2)){
+                if((i + j) % 2 == 0) board[i][j] = Player::piece::e;
+                else board[i][j] = Player::piece::x;
+            }
+            else if((i >= 5) && (i <= 7)){
+                if((i + j) % 2 == 0) board[i][j] = Player::piece::e;
+                else board[i][j] = Player::piece::o;
+            }
+            else{
+                board[i][j] = Player::piece::e;
+            }
+        }
+    }
+    return board;
+}
+
+Player::piece** insert_board(Step moves, Player::piece** const board){
+    Player::piece** temp = board;
+    temp[moves.begin[0]][moves.begin[1]] = Player::piece::e;
+    Player::piece pawn;
+
+    if(moves.move == Player::piece::x)
+        if(moves.end[0] == (SIZE - 1)) pawn = Player::piece::X;
+        else pawn = Player::piece::x;
+    else if(moves.move == Player::piece::o) 
+        if(moves.end[0] == 0) pawn = Player::piece::O;
+        else pawn = Player::piece::o;
+    else pawn = moves.move;
+
+    temp[moves.end[0]][moves.end[1]] = pawn;
+    temp[moves.take[0]][moves.take[1]] = Player::piece::e;
+    return temp;
+}
 
 Player::piece dame_p(Player::piece i) {
     if(i == Player::piece::x) return Player::piece::X;
@@ -182,9 +261,6 @@ Step* moves(int way, Player::piece pawn, Player::piece** board){
     return moves;
 }
 
-/*
-Returns the random coordinates of one of many possible moves
-*/
 Step rand_moves(Player::piece pawn, Player::piece** board){
     Step move;
     int count, num, way;
@@ -205,42 +281,12 @@ Step rand_moves(Player::piece pawn, Player::piece** board){
     return move;
 }
 
-/*
-Check if two boards are equals
-*/
-bool are_equal(Player::piece** board1, Player::piece** board2){
-    for(int i = 0; i < SIZE; i++) {
-		for(int j = 0; j < SIZE; j++) {
-			if(board1[i][j] != board2[i][j]) return false;
-		}
-	}
-    return true;
-}
-
 struct Player::Impl{
     Player::piece** board;
     Impl* next;
     int player_nr;
     int board_count;
 };
-
-Player::piece** new_board(){
-    Player::piece** board = new Player::piece*[SIZE];
-    for(int i = 0; i < SIZE; i++)
-        board[i] = new Player::piece[SIZE];
-    return board;
-}
-
-
-
-Player::piece** copy_board(Player::piece** temp,Player::piece** copy){
-    for(int i = 0; i < SIZE; i ++){
-        for(int j = 0; j < SIZE; j++){
-            temp[i][j] = copy[i][j];
-        }
-    }
-    return temp;
-}
 
 Player::Player(int player_nr){
     if((player_nr != 1) && (player_nr != 2)){
@@ -315,7 +361,6 @@ Player::piece Player::operator()(int r, int c, int history_offset) const{
     return temp->board[r][c];
 }
 
-
 /*
 Load the board from "filename"
 */
@@ -389,25 +434,13 @@ void Player::store_board(const std::string& filename, int history_offset) const{
     
     temp = this->pimpl;
     int pc = count - history_offset;
-
-    while(temp->board_count != pc){
+    
+    while(pc != 0){
         temp = temp->next;
+        pc--;
     }
-
-    std::fstream file;
-    file.open(filename, std::fstream::out);
-
-    for(int i = (SIZE - 1); i >= 0; i--) {
-        for(int j = 0; j < SIZE; j++) {
-            file << convert_char(temp->board[i][j]);
-            if(j != (SIZE - 1))
-                file << ' ';
-        }
-        if(i != 0)
-            file << "\n";
-    }
-
-    file.close();
+    std::string name = filename;
+    file_insert(temp->board, name);
 }
 
 /*
@@ -415,59 +448,10 @@ Initialize a board and store it into "filename"
 */
 void Player::init_board(const std::string& filename) const{
     Player::piece** board = new_board();
-    for(int i = 0; i < SIZE; i++){
-        for(int j = 0; j <= SIZE - 1; j++){
-            if((i >= 0) && (i <= 2)){
-                if((i + j) % 2 == 0) board[i][j] = Player::piece::e;
-                else board[i][j] = Player::piece::x;
-            }
-            else if((i >= 5) && (i <= 7)){
-                if((i + j) % 2 == 0) board[i][j] = Player::piece::e;
-                else board[i][j] = Player::piece::o;
-            }
-            else{
-                board[i][j] = Player::piece::e;
-            }
-        }
-    }
-
-    std::fstream file;
-    file.open(filename, std::fstream::out);
-    for(int i = SIZE - 1; i >= 0; i--){
-        for(int j = 0; j <= SIZE - 1; j++){
-            file <<convert_char(board[i][j]);
-            if(j != SIZE - 1)
-                file <<" ";
-        }
-        if(i != 0)
-            file <<"\n";
-    }
-
-    file.close();
-    clear_board(board);
+    board = standard_board(board);
+   std::string name = filename;
+    file_insert(board, name);
 }
-
-/*
-insert moves in a board
-*/
-Player::piece** insert_board(Step moves, Player::piece** const board){
-    Player::piece** temp = board;
-    temp[moves.begin[0]][moves.begin[1]] = Player::piece::e;
-    Player::piece pawn;
-
-    if(moves.move == Player::piece::x)
-        if(moves.end[0] == (SIZE - 1)) pawn = Player::piece::X;
-        else pawn = Player::piece::x;
-    else if(moves.move == Player::piece::o) 
-        if(moves.end[0] == 0) pawn = Player::piece::O;
-        else pawn = Player::piece::o;
-    else pawn = moves.move;
-
-    temp[moves.end[0]][moves.end[1]] = pawn;
-    temp[moves.take[0]][moves.take[1]] = Player::piece::e;
-    return temp;
-}
-
 
 void Player::move(){
     Player::piece** board = new_board();

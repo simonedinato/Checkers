@@ -12,7 +12,7 @@ using std::string;
 
 int main(int argc, char **argv){
 	
-	int player_nr = atoi(argv[1]);	
+	int player_nr = std::atoi(argv[1]);	
 	Player p(player_nr);
 	
 	cout << "Playing as player " << player_nr << endl;
